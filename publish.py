@@ -1,4 +1,5 @@
 import bottle
+import json
 
 import settings
 
@@ -18,6 +19,10 @@ def publish():
 
     if not payload:
         raise Exception("Missing payload")
+    try:
+        payload = json.loads(payload)
+    except:
+        pass
 
     key = (publisher,event_type)
     if key not in _publishers:

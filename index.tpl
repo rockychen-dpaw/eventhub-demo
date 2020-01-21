@@ -38,22 +38,36 @@
         function listen(subscriber,publisher,event_type){
             ws = new WebSocket('wss://' + window.location.host + '/listen/' + subscriber + '/' + event_type);
             ws.onopen = function(evt) {
-                $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_status").html("Listening")
-                $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_listen").prop("disabled",true)
-                $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_stoplisten").prop("disabled",false)
+                $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_status").text("Listening")
+                $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_listen").hide()
+                $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_stoplisten").show()
+            $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_stoplisten").prop("disabled",false)
             }
             ws.onmessage = function(evt) {
                 $("#id_" + subscriber + "_" + publisher + "_" + event_type).prepend($(evt.data))
                 $("#id_" + subscriber + "_" + publisher + "_" + event_type).scrollTop(0)
+                counter = $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_counter").text()
+                try {
+                  if (counter) {
+                    counter = parseInt(counter)
+                  } else {
+                    counter = 0
+                  }
+                } catch(ex) {
+                  counter = 0
+                }
+                $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_counter").text(counter + 1)
             }
             ws.onclose = function(evt) {
-                $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_status").html("")
-                $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_listen").prop("disabled",false)
-                $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_stoplisten").prop("disabled",true)
+                $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_status").text("Stopped")
+                $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_listen").show()
+                $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_stoplisten").hide()
             }
         }
 
         function stopListen(subscriber,publisher,event_type){
+            $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_status").text("Stopping")
+            $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_stoplisten").prop("disabled",true)
             $.ajax({
                 type:'GET',
                 url:'/stoplisten/' + subscriber + '/' + event_type,
@@ -88,8 +102,11 @@
               <th>
                 {{subscriber.name}}
                 <button id="id_{{subscriber.name}}_{{publisher.name}}_{{event_type.name}}_listen"  onclick="listen('{{subscriber.name}}','{{publisher.name}}','{{event_type.name}}')">Listen</button>
-                <button id="id_{{subscriber.name}}_{{publisher.name}}_{{event_type.name}}_stoplisten" disabled onclick="stopListen('{{subscriber.name}}','{{publisher.name}}','{{event_type.name}}')">Stop</button>
-                <br><div id="id_{{subscriber.name}}_{{publisher.name}}_{{event_type.name}}_status"></div>
+                <button id="id_{{subscriber.name}}_{{publisher.name}}_{{event_type.name}}_stoplisten" style="display:none" onclick="stopListen('{{subscriber.name}}','{{publisher.name}}','{{event_type.name}}')">Stop</button>
+                <br><div>
+                  <span id="id_{{subscriber.name}}_{{publisher.name}}_{{event_type.name}}_status"></span>
+                  <span id="id_{{subscriber.name}}_{{publisher.name}}_{{event_type.name}}_counter" style="padding-left:50px"></span>
+                </div>
               </th>
             % end
             </tr>
