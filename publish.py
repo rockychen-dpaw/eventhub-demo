@@ -1,20 +1,31 @@
-from bottle import get, template
+import bottle
 
 import settings
 
-@get('/')
-def index():
-    return template('index')
+from eventhub_client import Publisher
 
-@get('/websocket', apply=[websocket])
-def chat(ws):
-    users.add(ws)
-    while True:
-        msg = ws.receive()
-        if msg is not None:
-            for u in users:
-                u.send(msg)
-        else:
-            break
-    users.remove(ws)
+_publishers = {}
+@settings.app.post('/publish')
+def publish():
+    publisher = bottle.request.POST.get('publisher')
+    event_type = bottle.request.POST.get('event_type')
+    payload = bottle.request.POST.get('payload')
+    if not publisher:
+        raise Exception("Missing publisher")
+
+    if not event_type:
+        raise Exception("Missing event type")
+
+    if not payload:
+        raise Exception("Missing payload")
+
+    key = (publisher,event_type)
+    if key not in _publishers:
+        _publishers[key] = Publisher(publisher,event_type)
+
+    _publishers[key].publish(payload)
+
+    bottle.response.status=200
+    return "ok"
+
 
