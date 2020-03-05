@@ -15,44 +15,46 @@ _subscribers = {}
 def index():
     return template('index')
 
-def _stop_listen(subscriber,event_type):
+def _stop_listen(subscriber,event_type,client_id):
+    key = "{}_{}".format(subscriber,client_id)
     try:
-       if subscriber not in _subscribers:
+       if key not in _subscribers:
             return "not subscribed before"
 
-       if not _subscribers[subscriber].subscribed(event_type):
+       if not _subscribers[key].subscribed(event_type):
             return "not subscribed before"
 
-       _subscribers[subscriber].unsubscribe(event_type)
+       _subscribers[key].unsubscribe(event_type)
 
     finally:
-        if not _subscribers[subscriber].has_subscription:
-            _subscribers[subscriber].shutdown()
+        if not _subscribers[key].has_subscription:
+            _subscribers[key].shutdown()
     
     return "unsubscribed"
     
 
 
-@settings.app.get('/stoplisten/<subscriber:re:[a-zA-Z0-9_\-]+>/<event_type:re:[a-zA-Z0-9_\-]+>')
-def stop_listen(subscriber,event_type):
+@settings.app.get('/stoplisten/<subscriber:re:[a-zA-Z0-9_\-]+>/<event_type:re:[a-zA-Z0-9_\-]+>/<client_id:re:[0-9]+>')
+def stop_listen(subscriber,event_type,client_id):
     bottle.response.status=200
-    return _stop_listen(subscriber,event_type)
+    return _stop_listen(subscriber,event_type,client_id)
     
 
 
-@settings.app.get('/listen/<subscriber:re:[a-zA-Z0-9_\-]+>/<event_type:re:[a-zA-Z0-9_\-]+>')
-def listen(subscriber,event_type):
+@settings.app.get('/listen/<subscriber:re:[a-zA-Z0-9_\-]+>/<event_type:re:[a-zA-Z0-9_\-]+>/<client_id:re:[0-9]+>')
+def listen(subscriber,event_type,client_id):
+    key = "{}_{}".format(subscriber,client_id)
     ws = bottle.request.environ.get('wsgi.websocket')
-    if subscriber not in _subscribers:
-        _subscribers[subscriber] = Subscriber(subscriber)
+    if key not in _subscribers:
+        _subscribers[key] = Subscriber(subscriber)
 
-    subscribed_event_type,subscribed = _subscribers[subscriber].subscribe(event_type)
+    subscribed_event_type,subscribed = _subscribers[key].subscribe(event_type)
     event_queue = subscribed_event_type.callback_module.events
 
-    if not _subscribers[subscriber].started:
-        _subscribers[subscriber].start()
+    if not _subscribers[key].started:
+        _subscribers[key].start()
 
-    while _subscribers[subscriber].subscribed(subscribed_event_type.event_type):
+    while _subscribers[key].subscribed(subscribed_event_type.event_type):
         event = None
         try:
             #print("Wait events for {}->{}".format(subscriber,event_type))
@@ -62,7 +64,7 @@ def listen(subscriber,event_type):
             pass
         except KeyboardInterrupt:
             break
-    _stop_listen(subscriber,event_type)
+    _stop_listen(subscriber,event_type,client_id)
 
-    print("close websocket for {}.{}".format(subscriber,event_type))
+    print("close websocket for {}.{}; client_id={}".format(subscriber,event_type,client_id))
 

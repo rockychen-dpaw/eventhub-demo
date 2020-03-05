@@ -9,6 +9,7 @@
 
     <script src="/static/js/jquery-3.4.1{{"" if debug else ".min" }}.js"></script>
     <script>
+        var client_id = new Date().getTime()
         $(document).ready(function() {
             if (!window.WebSocket) {
                 if (window.MozWebSocket) {
@@ -36,7 +37,7 @@
         }
 
         function listen(subscriber,publisher,event_type){
-            ws = new WebSocket('wss://' + window.location.host + '/listen/' + subscriber + '/' + event_type);
+            ws = new WebSocket('wss://' + window.location.host + '/listen/' + subscriber + '/' + event_type + '/' + client_id);
             ws.onopen = function(evt) {
                 $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_status").text("Listening")
                 $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_listen").hide()
@@ -70,7 +71,7 @@
             $("#id_" + subscriber + "_" + publisher + "_" + event_type + "_stoplisten").prop("disabled",true)
             $.ajax({
                 type:'GET',
-                url:'/stoplisten/' + subscriber + '/' + event_type,
+                url:'/stoplisten/' + subscriber + '/' + event_type + '/' + client_id,
                 success:function(data,status,jqXHR){},
                 error:function(xhr,status,message){
                     alert(xhr.status + " : " + (xhr.responseText || message))
