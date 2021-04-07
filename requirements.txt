@@ -1,3 +1,3 @@
 #git+git://github.com/rockychen-dpaw/eventhub-client#egg=eventhub-client
-bottle==0.12.18
+bottle==0.12.19
 bottle-websocket==v0.2.9
